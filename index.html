@@ -41,6 +41,7 @@
       margin-top: 5px;
       box-sizing: border-box;
     }
+    .error { color: #c53030; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -82,6 +83,7 @@
     <h2 id="emailTitle"></h2>
     <input type="email" id="emailText" placeholder="" required />
     <button onclick="finish()">✅ Skicka / Submit</button>
+    <div id="errorMsg" class="error hidden"></div>
   </div>
 
   <div class="step hidden" id="thankyou">
@@ -89,7 +91,22 @@
     <p id="thanksSubText"></p>
   </div>
 
-<script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBXjjGK-cAkKC4CSOUyxYa23BP7TYOmTkw",
+  authDomain: "grill-spel.firebaseapp.com",
+  projectId: "grill-spel",
+  storageBucket: "grill-spel.firebasestorage.app",
+  messagingSenderId: "558218357374",
+  appId: "1:558218357374:web:eeaef6d629c6da47a0062f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 let lang = 'sv';
 
 function setLanguage(chosen) {
@@ -158,34 +175,52 @@ function setupEmail(){
   document.getElementById('emailText').placeholder = lang === 'sv' ? "din@email.com" : "your@email.com";
 }
 
-function finish(){
+async function finish(){
+  const email = document.getElementById('emailText').value;
+  const errorMsg = document.getElementById('errorMsg');
+  
+  if (!email) {
+    errorMsg.innerText = lang === 'sv' ? "E-post är obligatorisk" : "Email is required";
+    errorMsg.classList.remove('hidden');
+    return;
+  }
+
   const selectedDates = Array.from(document.querySelectorAll('#dateOptions input:checked'))
     .map(cb => cb.parentElement.textContent.trim());
   const otherDate = document.getElementById('otherDate').value;
   if(otherDate) selectedDates.push(otherDate);
 
-  const response = {
-    timestamp: new Date().toISOString(),
-    email: document.getElementById('emailText').value,
-    dates: selectedDates,
-    food: document.getElementById('foodText').value,
-    location: document.getElementById('locationText').value
-  };
+  try {
+    await addDoc(collection(db, "responses"), {
+      timestamp: serverTimestamp(),
+      email: email,
+      dates: selectedDates,
+      food: document.getElementById('foodText').value,
+      location: document.getElementById('locationText').value
+    });
 
-  // Save to localStorage
-  let responses = JSON.parse(localStorage.getItem('grill_responses') || '[]');
-  responses.push(response);
-  localStorage.setItem('grill_responses', JSON.stringify(responses));
-
-  document.querySelectorAll('.step').forEach(s=>s.classList.add('hidden'));
-  document.getElementById('thankyou').classList.remove('hidden');
-  document.getElementById('thanksText').innerText = lang==='sv'
-    ? "Tack för ditt svar! 🙌"
-    : "Thank you for your response! 🙌";
-  document.getElementById('thanksSubText').innerText = lang==='sv'
-    ? "Vi sammanställer svaren snart och bestämmer datum och plats."
-    : "We'll review responses soon and decide date and location.";
+    document.querySelectorAll('.step').forEach(s=>s.classList.add('hidden'));
+    document.getElementById('thankyou').classList.remove('hidden');
+    document.getElementById('thanksText').innerText = lang==='sv'
+      ? "Tack för ditt svar! 🙌"
+      : "Thank you for your response! 🙌";
+    document.getElementById('thanksSubText').innerText = lang==='sv'
+      ? "Vi sammanställer svaren snart och bestämmer datum och plats."
+      : "We'll review responses soon and decide date and location.";
+  } catch (error) {
+    errorMsg.innerText = lang === 'sv' ? "Fel vid sparning. Försök igen." : "Error saving. Please try again.";
+    errorMsg.classList.remove('hidden');
+    console.error("Error:", error);
+  }
 }
+
+window.setLanguage = setLanguage;
+window.nextStep = nextStep;
+window.showDates = showDates;
+window.setupFood = setupFood;
+window.setupLocation = setupLocation;
+window.setupEmail = setupEmail;
+window.finish = finish;
 </script>
 </body>
 </html>
