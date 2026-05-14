@@ -68,6 +68,11 @@
       padding: 40px;
       color: #718096;
     }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #2c5282;
+    }
   </style>
 </head>
 <body>
@@ -75,14 +80,15 @@
   <h1>📊 Survey Responses - Admin Panel</h1>
 
   <div class="controls">
-    <button onclick="location.reload()">🔄 Refresh</button>
+    <button onclick="loadResponses()">🔄 Refresh</button>
     <button onclick="exportCSV()">📥 Export to CSV</button>
-    <button onclick="clearAll()">🗑️ Clear All</button>
   </div>
 
   <div class="stats" id="stats"></div>
 
-  <table id="responses">
+  <div id="loading" class="loading">Loading responses...</div>
+
+  <table id="responses" style="display: none;">
     <thead>
       <tr>
         <th>Date Submitted</th>
@@ -99,52 +105,86 @@
     <p>No responses yet. Share the survey link!</p>
   </div>
 
-<script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+import { getFirestore, collection, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBXjjGK-cAkKC4CSOUyxYa23BP7TYOmTkw",
+  authDomain: "grill-spel.firebaseapp.com",
+  projectId: "grill-spel",
+  storageBucket: "grill-spel.firebasestorage.app",
+  messagingSenderId: "558218357374",
+  appId: "1:558218357374:web:eeaef6d629c6da47a0062f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let allResponses = [];
+
 function loadResponses() {
-  const responses = JSON.parse(localStorage.getItem('grill_responses') || '[]');
+  const q = query(collection(db, "responses"), orderBy("timestamp", "desc"));
+  
+  onSnapshot(q, (querySnapshot) => {
+    allResponses = [];
+    querySnapshot.forEach((doc) => {
+      allResponses.push(doc.data());
+    });
+    
+    displayResponses();
+  });
+}
+
+function displayResponses() {
   const tbody = document.getElementById('tbody');
   const empty = document.getElementById('empty');
+  const loading = document.getElementById('loading');
+  const table = document.getElementById('responses');
   
-  if (responses.length === 0) {
-    document.getElementById('responses').style.display = 'none';
+  if (allResponses.length === 0) {
+    table.style.display = 'none';
+    loading.style.display = 'none';
     empty.style.display = 'block';
     return;
   }
   
+  loading.style.display = 'none';
   empty.style.display = 'none';
-  document.getElementById('responses').style.display = 'table';
+  table.style.display = 'table';
   tbody.innerHTML = '';
   
-  responses.forEach(r => {
+  allResponses.forEach(r => {
     const row = tbody.insertRow();
+    const timestamp = r.timestamp ? new Date(r.timestamp.seconds * 1000).toLocaleString() : 'N/A';
     row.innerHTML = `
-      <td>${new Date(r.timestamp).toLocaleString()}</td>
-      <td>${r.email}</td>
-      <td>${r.dates.join(', ') || 'None selected'}</td>
+      <td>${timestamp}</td>
+      <td>${r.email || '-'}</td>
+      <td>${r.dates && r.dates.length > 0 ? r.dates.join(', ') : 'None selected'}</td>
       <td>${r.food || '-'}</td>
       <td>${r.location || '-'}</td>
     `;
   });
   
-  updateStats(responses);
+  updateStats();
 }
 
-function updateStats(responses) {
+function updateStats() {
   const stats = document.getElementById('stats');
   stats.innerHTML = '';
   
-  // Total count
   const totalCard = document.createElement('div');
   totalCard.className = 'stat-card';
-  totalCard.innerHTML = `<h3>Total Responses</h3><p style="font-size: 32px; font-weight: bold;">${responses.length}</p>`;
+  totalCard.innerHTML = `<h3>Total Responses</h3><p style="font-size: 32px; font-weight: bold;">${allResponses.length}</p>`;
   stats.appendChild(totalCard);
   
-  // Most popular dates
   const dateCount = {};
-  responses.forEach(r => {
-    r.dates.forEach(d => {
-      dateCount[d] = (dateCount[d] || 0) + 1;
-    });
+  allResponses.forEach(r => {
+    if (r.dates && Array.isArray(r.dates)) {
+      r.dates.forEach(d => {
+        dateCount[d] = (dateCount[d] || 0) + 1;
+      });
+    }
   });
   
   if (Object.keys(dateCount).length > 0) {
@@ -155,10 +195,11 @@ function updateStats(responses) {
     stats.appendChild(dateCard);
   }
   
-  // Most popular location
   const locationCount = {};
-  responses.forEach(r => {
-    if (r.location) locationCount[r.location] = (locationCount[r.location] || 0) + 1;
+  allResponses.forEach(r => {
+    if (r.location && r.location.trim()) {
+      locationCount[r.location] = (locationCount[r.location] || 0) + 1;
+    }
   });
   
   if (Object.keys(locationCount).length > 0) {
@@ -171,37 +212,32 @@ function updateStats(responses) {
 }
 
 function exportCSV() {
-  const responses = JSON.parse(localStorage.getItem('grill_responses') || '[]');
-  if (responses.length === 0) {
+  if (allResponses.length === 0) {
     alert('No responses to export');
     return;
   }
   
   let csv = 'Date Submitted,Email,Preferred Dates,Food Restrictions,Location Suggestion\n';
-  responses.forEach(r => {
-    csv += `"${new Date(r.timestamp).toLocaleString()}","${r.email}","${r.dates.join('; ')}","${r.food}","${r.location}"\n`;
+  allResponses.forEach(r => {
+    const timestamp = r.timestamp ? new Date(r.timestamp.seconds * 1000).toLocaleString() : 'N/A';
+    csv += `"${timestamp}","${r.email || ''}","${r.dates && r.dates.join('; ') || ''}","${r.food || ''}","${r.location || ''}"\n`;
   });
   
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'grill-responses.csv';
-  a.click();
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", "grill-responses.csv");
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
-function clearAll() {
-  if (confirm('Are you sure? This will delete all responses permanently.')) {
-    localStorage.removeItem('grill_responses');
-    loadResponses();
-  }
-}
+window.loadResponses = loadResponses;
+window.exportCSV = exportCSV;
 
-// Load responses on page load
 loadResponses();
-
-// Refresh every 10 seconds
-setInterval(loadResponses, 10000);
 </script>
 </body>
 </html>
