@@ -48,10 +48,10 @@ tr:hover { background:#f7fafc; }
 </table>
 
 <script type="module">
-import { initializeApp } from '[gstatic.com](https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js)';
-import { getFirestore, collection, query, orderBy, onSnapshot } from '[gstatic.com](https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js)';
+import { initializeApp } from "[gstatic.com](https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js)";
+import { getFirestore, collection, query, orderBy, onSnapshot } from "[gstatic.com](https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js)";
 
-// ✅ your Firebase setup
+// ✅ Firestore config (MUST match the one in your index.html)
 const firebaseConfig = {
   apiKey: "AIzaSyBXjjGK-cAkKC4CSOUyxYa23BP7TYOmTkw",
   authDomain: "grill-spel.firebaseapp.com",
@@ -64,37 +64,39 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+const tbody = document.getElementById("tbody");
+const table = document.getElementById("responses");
+const loading = document.getElementById("loading");
+const empty = document.getElementById("empty");
+const statsBox = document.getElementById("stats");
+
 let allResponses = [];
 
-const tbody = document.getElementById('tbody');
-const table = document.getElementById('responses');
-const loading = document.getElementById('loading');
-const empty = document.getElementById('empty');
-const statsBox = document.getElementById('stats');
-
 function displayResponses() {
-  loading.style.display = 'none';
-  tbody.innerHTML = '';
+  loading.style.display = "none";
+  tbody.innerHTML = "";
 
   if (allResponses.length === 0) {
-    table.style.display = 'none';
-    empty.style.display = 'block';
-    statsBox.innerHTML = '';
+    table.style.display = "none";
+    empty.style.display = "block";
+    statsBox.innerHTML = "";
     return;
   }
 
-  table.style.display = 'table';
-  empty.style.display = 'none';
+  table.style.display = "table";
+  empty.style.display = "none";
 
   allResponses.forEach(r => {
-    const tr = document.createElement('tr');
-    const ts = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000).toLocaleString() : 'N/A';
+    const tr = document.createElement("tr");
+    const ts = r.timestamp?.seconds
+      ? new Date(r.timestamp.seconds * 1000).toLocaleString()
+      : "N/A";
     tr.innerHTML = `
       <td>${ts}</td>
-      <td>${r.email || '-'}</td>
-      <td>${(r.dates && r.dates.join(', ')) || '-'}</td>
-      <td>${r.food || '-'}</td>
-      <td>${r.location || '-'}</td>`;
+      <td>${r.email || "-"}</td>
+      <td>${(r.dates && r.dates.join(", ")) || "-"}</td>
+      <td>${r.food || "-"}</td>
+      <td>${r.location || "-"}</td>`;
     tbody.appendChild(tr);
   });
 
@@ -102,68 +104,74 @@ function displayResponses() {
 }
 
 function updateStats() {
-  statsBox.innerHTML = '';
+  statsBox.innerHTML = "";
 
-  const totalCard = document.createElement('div');
-  totalCard.className = 'stat-card';
+  const totalCard = document.createElement("div");
+  totalCard.className = "stat-card";
   totalCard.innerHTML = `<h3>Total Responses</h3><p style="font-size:28px;font-weight:bold;">${allResponses.length}</p>`;
   statsBox.appendChild(totalCard);
 
   const dateCount = {};
   allResponses.forEach(r => {
     if (Array.isArray(r.dates)) {
-      r.dates.forEach(d => dateCount[d] = (dateCount[d] || 0) + 1);
+      r.dates.forEach(d => (dateCount[d] = (dateCount[d] || 0) + 1));
     }
   });
   if (Object.keys(dateCount).length > 0) {
-    const mostDate = Object.entries(dateCount).sort((a,b)=>b[1]-a[1])[0];
-    const card = document.createElement('div');
-    card.className = 'stat-card';
-    card.innerHTML = `<h3>Most Popular Date</h3><p>${mostDate[0]} (${mostDate[1]})</p>`;
-    statsBox.appendChild(card);
+    const topDate = Object.entries(dateCount).sort((a, b) => b[1] - a[1])[0];
+    const dateCard = document.createElement("div");
+    dateCard.className = "stat-card";
+    dateCard.innerHTML = `<h3>Most Popular Date</h3><p>${topDate[0]} (${topDate[1]})</p>`;
+    statsBox.appendChild(dateCard);
   }
 
   const locCount = {};
   allResponses.forEach(r => {
-    if (r.location) locCount[r.location.trim()] = (locCount[r.location.trim()] || 0) + 1;
+    if (r.location) {
+      const loc = r.location.trim();
+      locCount[loc] = (locCount[loc] || 0) + 1;
+    }
   });
   if (Object.keys(locCount).length > 0) {
-    const topLoc = Object.entries(locCount).sort((a,b)=>b[1]-a[1])[0];
-    const card = document.createElement('div');
-    card.className = 'stat-card';
-    card.innerHTML = `<h3>Top Location</h3><p>${topLoc[0]} (${topLoc[1]}x)</p>`;
-    statsBox.appendChild(card);
+    const topLoc = Object.entries(locCount).sort((a, b) => b[1] - a[1])[0];
+    const locCard = document.createElement("div");
+    locCard.className = "stat-card";
+    locCard.innerHTML = `<h3>Top Location</h3><p>${topLoc[0]} (${topLoc[1]})</p>`;
+    statsBox.appendChild(locCard);
   }
 }
 
 function exportCSV() {
-  if (!allResponses.length) { alert('No responses to export'); return; }
-
-  let csv = 'Date Submitted,Email,Preferred Dates,Food Restrictions,Location Suggestion\n';
+  if (!allResponses.length) {
+    alert("No responses to export.");
+    return;
+  }
+  let csv = "Date Submitted,Email,Preferred Dates,Food Restrictions,Location Suggestion\n";
   allResponses.forEach(r => {
-    const ts = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000).toLocaleString() : '';
-    csv += `"${ts}","${r.email || ''}","${(r.dates && r.dates.join('; ')) || ''}","${r.food || ''}","${r.location || ''}"\n`;
+    const ts = r.timestamp?.seconds
+      ? new Date(r.timestamp.seconds * 1000).toLocaleString()
+      : "";
+    csv += `"${ts}","${r.email || ""}","${(r.dates && r.dates.join("; ")) || ""}","${r.food || ""}","${r.location || ""}"\n`;
   });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
-  link.download = 'grill-responses.csv';
+  link.download = "grill-responses.csv";
   link.click();
   URL.revokeObjectURL(url);
 }
 
-// live Firestore listener
+// 🔁 Real-time listener for Firestore
 function loadResponses() {
-  const q = query(collection(db, 'responses'), orderBy('timestamp', 'desc'));
-  onSnapshot(q, qs => {
-    allResponses = qs.docs.map(doc => doc.data());
+  const q = query(collection(db, "responses"), orderBy("timestamp", "desc"));
+  onSnapshot(q, (snapshot) => {
+    allResponses = snapshot.docs.map((doc) => doc.data());
     displayResponses();
   });
 }
 
 loadResponses();
-setInterval(loadResponses, 10000);
 window.exportCSV = exportCSV;
 </script>
 
