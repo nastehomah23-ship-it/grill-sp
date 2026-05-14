@@ -7,161 +7,185 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f8f9fa;
-      color: #333;
+      background: #f7fafc;
+      color: #2d3748;
       margin: 0;
       padding: 20px;
-      max-width: 600px;
+      max-width: 650px;
       margin-inline: auto;
     }
-    h1, h2 {
-      text-align: center;
-      color: #2c3e50;
-    }
+    h1, h2 { text-align: center; color: #2c5282; }
     .hidden { display: none; }
     .step {
       background: #fff;
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin: 20px 0;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
     }
     button {
-      background-color: #2c7a7b;
-      color: #fff;
+      background-color: #2b6cb0;
+      color: white;
       border: none;
       padding: 10px 16px;
+      border-radius: 6px;
       cursor: pointer;
-      border-radius: 5px;
-      font-size: 16px;
+      font-size: 15px;
+      margin-top: 10px;
     }
-    button:hover {
-      background-color: #205c5d;
-    }
-    input[type="text"], textarea {
-      width: 100%;
-      padding: 8px;
+    button:hover { background-color: #2c5282; }
+    label { display: block; margin: 8px 0; }
+    input[type="text"], input[type="email"], textarea {
+      width: 100%; padding: 8px;
+      border-radius: 4px; border: 1px solid #cbd5e0;
       margin-top: 5px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      box-sizing: border-box;
     }
-    label { display: block; margin-bottom: 8px; }
   </style>
 </head>
 <body>
 
   <h1>🎓 Klassens Grill- och Spelträff / Class BBQ & Games</h1>
 
-  <!-- Step 1 - Language -->
   <div class="step" id="step1">
     <h2>Välj språk / Choose language</h2>
     <button onclick="setLanguage('sv')">🇸🇪 Svenska</button>
     <button onclick="setLanguage('en')">🇬🇧 English</button>
   </div>
 
-  <!-- Step 2 - Welcome -->
   <div class="step hidden" id="step2">
     <h2 id="welcomeText"></h2>
     <button onclick="nextStep(3)">➡️ Start</button>
   </div>
 
-  <!-- Step 3 - Date -->
   <div class="step hidden" id="step3">
     <h2 id="dateTitle"></h2>
     <div id="dateOptions"></div>
-    <input type="text" id="otherDate" placeholder="">
+    <label><input type="checkbox" id="otherCheck"> <span id="otherLabel"></span></label>
+    <input type="text" id="otherDate" class="hidden" placeholder="" />
     <button onclick="nextStep(4)">➡️ Nästa / Next</button>
   </div>
 
-  <!-- Step 4 - Allergies -->
   <div class="step hidden" id="step4">
     <h2 id="foodTitle"></h2>
     <textarea id="foodText" rows="3" placeholder=""></textarea>
     <button onclick="nextStep(5)">➡️ Nästa / Next</button>
   </div>
 
-  <!-- Step 5 - Location -->
   <div class="step hidden" id="step5">
     <h2 id="locationTitle"></h2>
     <textarea id="locationText" rows="3" placeholder=""></textarea>
+    <button onclick="nextStep(6)">➡️ Nästa / Next</button>
+  </div>
+
+  <div class="step hidden" id="step6">
+    <h2 id="emailTitle"></h2>
+    <input type="email" id="emailText" placeholder="" required />
     <button onclick="finish()">✅ Skicka / Submit</button>
   </div>
 
-  <!-- Step 6 - Thank you -->
   <div class="step hidden" id="thankyou">
     <h2 id="thanksText"></h2>
     <p id="thanksSubText"></p>
   </div>
 
-  <script>
-    let lang = 'sv';
+<script>
+let lang = 'sv';
 
-    function setLanguage(chosen) {
-      lang = chosen;
-      document.getElementById('step1').classList.add('hidden');
-      document.getElementById('step2').classList.remove('hidden');
-      document.getElementById('welcomeText').innerText =
-        lang === 'sv'
-          ? "Hej! 🌞 Vi planerar en grill- och spelträff i juni. Hjälp oss hitta bästa datumet och platsen!"
-          : "Hi there! 🌞 We're planning a BBQ and games day in June. Help us pick the best date and location!";
-    }
+function setLanguage(chosen) {
+  lang = chosen;
+  showStep(2);
+  document.getElementById('welcomeText').innerText =
+    lang === 'sv'
+      ? "Hej! 🌞 Vi planerar en klassens grill- och spelträff i juni. Hjälp oss hitta datum och plats!"
+      : "Hi there! 🌞 We're planning a class BBQ & games day in June. Help us pick the best date and place!";
+}
 
-    function nextStep(number) {
-      for (let i = 1; i <= 6; i++) document.getElementById('step'+i)?.classList.add('hidden');
-      document.getElementById('step'+number).classList.remove('hidden');
-      if (number === 3) showDates();
-      if (number === 4) setupFood();
-      if (number === 5) setupLocation();
-    }
+function showStep(n){
+  document.querySelectorAll('.step').forEach(s => s.classList.add('hidden'));
+  document.getElementById('step'+n)?.classList.remove('hidden');
+  if(n===3) showDates();
+  if(n===4) setupFood();
+  if(n===5) setupLocation();
+  if(n===6) setupEmail();
+}
 
-    function showDates(){
-      document.getElementById('dateTitle').innerText = 
-        lang === 'sv' ? "Vilka datum passar dig bäst?" : "Which dates work best for you?";
-      
-      const dateOptions = ["5 juni", "6 juni", "7 juni", "12 juni", "13 juni", "14 juni"];
-      const engDates = ["June 5", "June 6", "June 7", "June 12", "June 13", "June 14"];
-      const container = document.getElementById('dateOptions');
-      container.innerHTML = "";
-      (lang === 'sv' ? dateOptions : engDates).forEach(date => {
-        const label = document.createElement('label');
-        label.innerHTML = `<input type="checkbox"> ${date}`;
-        container.appendChild(label);
-      });
-      document.getElementById('otherDate').placeholder = lang === 'sv' ? "Annat datum..." : "Other date...";
-    }
+function nextStep(n){ showStep(n); }
 
-    function setupFood(){
-      document.getElementById('foodTitle').innerText =
-        lang === 'sv'
-          ? "Har du några matrestriktioner eller allergier?"
-          : "Do you have any food restrictions or allergies?";
-      document.getElementById('foodText').placeholder =
-        lang === 'sv'
-          ? "Skriv t.ex. 'vegetarian', 'ingen nötter' osv..."
-          : "Write e.g. 'vegetarian', 'no nuts', etc...";
-    }
+function showDates(){
+  document.getElementById('dateTitle').innerText = lang === 'sv'
+    ? "Vilka datum passar dig bäst?"
+    : "Which dates work best for you?";
 
-    function setupLocation(){
-      document.getElementById('locationTitle').innerText =
-        lang === 'sv'
-          ? "Har du förslag på en fin plats för grill och spel?"
-          : "Do you have any nice place suggestions for BBQ and games?";
-      document.getElementById('locationText').placeholder =
-        lang === 'sv'
-          ? "Skriv t.ex. 'Stadsparken', 'sjön vid campus'..."
-          : "Write e.g. 'City Park', 'Lake by campus'...";
-    }
+  const svDates = ["5 juni", "6 juni", "7 juni", "12 juni", "13 juni", "14 juni"];
+  const enDates = ["June 5", "June 6", "June 7", "June 12", "June 13", "June 14"];
+  const container = document.getElementById('dateOptions');
+  container.innerHTML = "";
+  (lang==='sv' ? svDates : enDates).forEach(date=>{
+    const lbl = document.createElement('label');
+    lbl.innerHTML = `<input type="checkbox"> ${date}`;
+    container.appendChild(lbl);
+  });
+  document.getElementById('otherLabel').innerText = lang === 'sv' ? "Annat datum" : "Other date";
+  document.getElementById('otherDate').placeholder = lang === 'sv' ? "Skriv annat datum..." : "Enter another date...";
+  document.getElementById('otherCheck').onchange = e => {
+    document.getElementById('otherDate').classList.toggle('hidden', !e.target.checked);
+  };
+}
 
-    function finish(){
-      document.querySelectorAll('.step').forEach(s=>s.classList.add('hidden'));
-      document.getElementById('thankyou').classList.remove('hidden');
-      document.getElementById('thanksText').innerText =
-        lang === 'sv' ? "Tack för ditt svar! 🙌" : "Thank you for your response! 🙌";
-      document.getElementById('thanksSubText').innerText =
-        lang === 'sv' ? "Vi sammanställer svaren snart och bestämmer datum & plats!" :
-                        "We'll review the responses soon and pick a date & place!";
-    }
-  </script>
+function setupFood(){
+  document.getElementById('foodTitle').innerText = lang === 'sv'
+    ? "Har du några matrestriktioner eller allergier?"
+    : "Do you have any food restrictions or allergies?";
+  document.getElementById('foodText').placeholder = lang==='sv'
+    ? "T.ex. vegetarian, ingen laktos, nötallergi..."
+    : "E.g. vegetarian, lactose free, nut allergy...";
+}
+
+function setupLocation(){
+  document.getElementById('locationTitle').innerText = lang === 'sv'
+    ? "Har du förslag på en fin plats för grillning och spel?"
+    : "Do you know any nice places for BBQ and games?";
+  document.getElementById('locationText').placeholder = lang==='sv'
+    ? "T.ex. Stadsparken, sjön vid campus..."
+    : "E.g. City Park, lake near campus...";
+}
+
+function setupEmail(){
+  document.getElementById('emailTitle').innerText = lang === 'sv'
+    ? "Din e-postadress (för kontakt)"
+    : "Your email address (for contact)";
+  document.getElementById('emailText').placeholder = lang === 'sv' ? "din@email.com" : "your@email.com";
+}
+
+function finish(){
+  const selectedDates = Array.from(document.querySelectorAll('#dateOptions input:checked'))
+    .map(cb => cb.parentElement.textContent.trim());
+  const otherDate = document.getElementById('otherDate').value;
+  if(otherDate) selectedDates.push(otherDate);
+
+  const response = {
+    timestamp: new Date().toISOString(),
+    email: document.getElementById('emailText').value,
+    dates: selectedDates,
+    food: document.getElementById('foodText').value,
+    location: document.getElementById('locationText').value
+  };
+
+  // Save to localStorage
+  let responses = JSON.parse(localStorage.getItem('grill_responses') || '[]');
+  responses.push(response);
+  localStorage.setItem('grill_responses', JSON.stringify(responses));
+
+  document.querySelectorAll('.step').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('thankyou').classList.remove('hidden');
+  document.getElementById('thanksText').innerText = lang==='sv'
+    ? "Tack för ditt svar! 🙌"
+    : "Thank you for your response! 🙌";
+  document.getElementById('thanksSubText').innerText = lang==='sv'
+    ? "Vi sammanställer svaren snart och bestämmer datum och plats."
+    : "We'll review responses soon and decide date and location.";
+}
+</script>
 </body>
 </html>
