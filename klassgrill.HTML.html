@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Klassens Grill- och Spelträff</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      max-width: 600px;
+      margin-inline: auto;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    .hidden { display: none; }
+    .step {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    button {
+      background-color: #2c7a7b;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #205c5d;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    label { display: block; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+  <h1>🎓 Klassens Grill- och Spelträff / Class BBQ & Games</h1>
+
+  <!-- Step 1 - Language -->
+  <div class="step" id="step1">
+    <h2>Välj språk / Choose language</h2>
+    <button onclick="setLanguage('sv')">🇸🇪 Svenska</button>
+    <button onclick="setLanguage('en')">🇬🇧 English</button>
+  </div>
+
+  <!-- Step 2 - Welcome -->
+  <div class="step hidden" id="step2">
+    <h2 id="welcomeText"></h2>
+    <button onclick="nextStep(3)">➡️ Start</button>
+  </div>
+
+  <!-- Step 3 - Date -->
+  <div class="step hidden" id="step3">
+    <h2 id="dateTitle"></h2>
+    <div id="dateOptions"></div>
+    <input type="text" id="otherDate" placeholder="">
+    <button onclick="nextStep(4)">➡️ Nästa / Next</button>
+  </div>
+
+  <!-- Step 4 - Allergies -->
+  <div class="step hidden" id="step4">
+    <h2 id="foodTitle"></h2>
+    <textarea id="foodText" rows="3" placeholder=""></textarea>
+    <button onclick="nextStep(5)">➡️ Nästa / Next</button>
+  </div>
+
+  <!-- Step 5 - Location -->
+  <div class="step hidden" id="step5">
+    <h2 id="locationTitle"></h2>
+    <textarea id="locationText" rows="3" placeholder=""></textarea>
+    <button onclick="finish()">✅ Skicka / Submit</button>
+  </div>
+
+  <!-- Step 6 - Thank you -->
+  <div class="step hidden" id="thankyou">
+    <h2 id="thanksText"></h2>
+    <p id="thanksSubText"></p>
+  </div>
+
+  <script>
+    let lang = 'sv';
+
+    function setLanguage(chosen) {
+      lang = chosen;
+      document.getElementById('step1').classList.add('hidden');
+      document.getElementById('step2').classList.remove('hidden');
+      document.getElementById('welcomeText').innerText =
+        lang === 'sv'
+          ? "Hej! 🌞 Vi planerar en grill- och spelträff i juni. Hjälp oss hitta bästa datumet och platsen!"
+          : "Hi there! 🌞 We’re planning a BBQ and games day in June. Help us pick the best date and location!";
+    }
+
+    function nextStep(number) {
+      for (let i = 1; i <= 6; i++) document.getElementById('step'+i)?.classList.add('hidden');
+      document.getElementById('step'+number).classList.remove('hidden');
+      if (number === 3) showDates();
+      if (number === 4) setupFood();
+      if (number === 5) setupLocation();
+    }
+
+    function showDates(){
+      document.getElementById('dateTitle').innerText = 
+        lang === 'sv' ? "Vilka datum passar dig bäst?" : "Which dates work best for you?";
+      
+      const dateOptions = ["5 juni", "6 juni", "7 juni", "12 juni", "13 juni", "14 juni"];
+      const engDates = ["June 5", "June 6", "June 7", "June 12", "June 13", "June 14"];
+      const container = document.getElementById('dateOptions');
+      container.innerHTML = "";
+      (lang === 'sv' ? dateOptions : engDates).forEach(date => {
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="checkbox"> ${date}`;
+        container.appendChild(label);
+      });
+      document.getElementById('otherDate').placeholder = lang === 'sv' ? "Annat datum..." : "Other date...";
+    }
+
+    function setupFood(){
+      document.getElementById('foodTitle').innerText =
+        lang === 'sv'
+          ? "Har du några matrestriktioner eller allergier?"
+          : "Do you have any food restrictions or allergies?";
+      document.getElementById('foodText').placeholder =
+        lang === 'sv'
+          ? "Skriv t.ex. 'vegetarian', 'ingen nötter' osv..."
+          : "Write e.g. 'vegetarian', 'no nuts', etc...";
+    }
+
+    function setupLocation(){
+      document.getElementById('locationTitle').innerText =
+        lang === 'sv'
+          ? "Har du förslag på en fin plats för grill och spel?"
+          : "Do you have any nice place suggestions for BBQ and games?";
+      document.getElementById('locationText').placeholder =
+        lang === 'sv'
+          ? "Skriv t.ex. 'Stadsparken', 'sjön vid campus'..."
+          : "Write e.g. 'City Park', 'Lake by campus'...";
+    }
+
+    function finish(){
+      document.querySelectorAll('.step').forEach(s=>s.classList.add('hidden'));
+      document.getElementById('thankyou').classList.remove('hidden');
+      document.getElementById('thanksText').innerText =
+        lang === 'sv' ? "Tack för ditt svar! 🙌" : "Thank you for your response! 🙌";
+      document.getElementById('thanksSubText').innerText =
+        lang === 'sv' ? "Vi sammanställer svaren snart och bestämmer datum & plats!" :
+                        "We’ll review the responses soon and pick a date & place!";
+    }
+  </script>
+</body>
+</html>
