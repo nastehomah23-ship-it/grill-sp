@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Survey Responses - Admin Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7fafc;
+      color: #2d3748;
+      margin: 0;
+      padding: 20px;
+      max-width: 1200px;
+      margin-inline: auto;
+    }
+    h1 { text-align: center; color: #2c5282; }
+    .controls {
+      text-align: center;
+      margin: 20px 0;
+    }
+    button {
+      background-color: #2b6cb0;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      margin: 5px;
+    }
+    button:hover { background-color: #2c5282; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .stat-card h3 { margin: 0 0 10px 0; color: #2c5282; }
+    .stat-card p { margin: 5px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    th {
+      background-color: #2c5282;
+      color: white;
+      padding: 12px;
+      text-align: left;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    tr:hover { background-color: #f7fafc; }
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: #718096;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📊 Survey Responses - Admin Panel</h1>
+
+  <div class="controls">
+    <button onclick="location.reload()">🔄 Refresh</button>
+    <button onclick="exportCSV()">📥 Export to CSV</button>
+    <button onclick="clearAll()">🗑️ Clear All</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <table id="responses">
+    <thead>
+      <tr>
+        <th>Date Submitted</th>
+        <th>Email</th>
+        <th>Preferred Dates</th>
+        <th>Food Restrictions</th>
+        <th>Location Suggestion</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <div id="empty" class="empty" style="display: none;">
+    <p>No responses yet. Share the survey link!</p>
+  </div>
+
+<script>
+function loadResponses() {
+  const responses = JSON.parse(localStorage.getItem('grill_responses') || '[]');
+  const tbody = document.getElementById('tbody');
+  const empty = document.getElementById('empty');
+  
+  if (responses.length === 0) {
+    document.getElementById('responses').style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  
+  empty.style.display = 'none';
+  document.getElementById('responses').style.display = 'table';
+  tbody.innerHTML = '';
+  
+  responses.forEach(r => {
+    const row = tbody.insertRow();
+    row.innerHTML = `
+      <td>${new Date(r.timestamp).toLocaleString()}</td>
+      <td>${r.email}</td>
+      <td>${r.dates.join(', ') || 'None selected'}</td>
+      <td>${r.food || '-'}</td>
+      <td>${r.location || '-'}</td>
+    `;
+  });
+  
+  updateStats(responses);
+}
+
+function updateStats(responses) {
+  const stats = document.getElementById('stats');
+  stats.innerHTML = '';
+  
+  // Total count
+  const totalCard = document.createElement('div');
+  totalCard.className = 'stat-card';
+  totalCard.innerHTML = `<h3>Total Responses</h3><p style="font-size: 32px; font-weight: bold;">${responses.length}</p>`;
+  stats.appendChild(totalCard);
+  
+  // Most popular dates
+  const dateCount = {};
+  responses.forEach(r => {
+    r.dates.forEach(d => {
+      dateCount[d] = (dateCount[d] || 0) + 1;
+    });
+  });
+  
+  if (Object.keys(dateCount).length > 0) {
+    const topDate = Object.entries(dateCount).sort((a, b) => b[1] - a[1])[0];
+    const dateCard = document.createElement('div');
+    dateCard.className = 'stat-card';
+    dateCard.innerHTML = `<h3>Most Popular Date</h3><p><strong>${topDate[0]}</strong></p><p>${topDate[1]} votes</p>`;
+    stats.appendChild(dateCard);
+  }
+  
+  // Most popular location
+  const locationCount = {};
+  responses.forEach(r => {
+    if (r.location) locationCount[r.location] = (locationCount[r.location] || 0) + 1;
+  });
+  
+  if (Object.keys(locationCount).length > 0) {
+    const topLocation = Object.entries(locationCount).sort((a, b) => b[1] - a[1])[0];
+    const locCard = document.createElement('div');
+    locCard.className = 'stat-card';
+    locCard.innerHTML = `<h3>Suggested Locations</h3><p><strong>${topLocation[0]}</strong></p><p>${topLocation[1]} mention${topLocation[1] > 1 ? 's' : ''}</p>`;
+    stats.appendChild(locCard);
+  }
+}
+
+function exportCSV() {
+  const responses = JSON.parse(localStorage.getItem('grill_responses') || '[]');
+  if (responses.length === 0) {
+    alert('No responses to export');
+    return;
+  }
+  
+  let csv = 'Date Submitted,Email,Preferred Dates,Food Restrictions,Location Suggestion\n';
+  responses.forEach(r => {
+    csv += `"${new Date(r.timestamp).toLocaleString()}","${r.email}","${r.dates.join('; ')}","${r.food}","${r.location}"\n`;
+  });
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'grill-responses.csv';
+  a.click();
+}
+
+function clearAll() {
+  if (confirm('Are you sure? This will delete all responses permanently.')) {
+    localStorage.removeItem('grill_responses');
+    loadResponses();
+  }
+}
+
+// Load responses on page load
+loadResponses();
+
+// Refresh every 10 seconds
+setInterval(loadResponses, 10000);
+</script>
+</body>
+</html>
