@@ -1,119 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Survey Responses - Admin Panel</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7fafc;
-      color: #2d3748;
-      margin: 0;
-      padding: 20px;
-      max-width: 1200px;
-      margin-inline: auto;
-    }
-    h1 { text-align: center; color: #2c5282; }
-    .controls {
-      text-align: center;
-      margin: 20px 0;
-    }
-    button {
-      background-color: #2b6cb0;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 15px;
-      margin: 5px;
-    }
-    button:hover { background-color: #2c5282; }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 15px;
-      margin: 20px 0;
-    }
-    .stat-card {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .stat-card h3 { margin: 0 0 10px 0; color: #2c5282; }
-    .stat-card p { margin: 5px 0; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    th {
-      background-color: #2c5282;
-      color: white;
-      padding: 12px;
-      text-align: left;
-    }
-    td {
-      padding: 12px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    tr:hover { background-color: #f7fafc; }
-    .empty {
-      text-align: center;
-      padding: 40px;
-      color: #718096;
-    }
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #2c5282;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Survey Responses - Admin Panel</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f7fafc; color:#2d3748; margin:0; padding:20px; max-width:1200px; margin-inline:auto; }
+h1 { text-align:center; color:#2c5282; }
+.controls { text-align:center; margin:20px 0; }
+button { background:#2b6cb0; color:white; border:none; padding:10px 16px; border-radius:6px; margin:5px; cursor:pointer; }
+button:hover { background:#2c5282; }
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:15px; margin-bottom:20px; }
+.stat-card { background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+.stat-card h3 { margin:0 0 10px 0; color:#2c5282; }
+table { width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+th, td { padding:10px; border-bottom:1px solid #e2e8f0; }
+th { background:#2c5282; color:white; text-align:left; }
+tr:hover { background:#f7fafc; }
+.empty, .loading { text-align:center; padding:30px; color:#718096; }
+</style>
 </head>
 <body>
 
-  <h1>📊 Survey Responses - Admin Panel</h1>
+<h1>📊 Survey Responses – Admin Panel</h1>
 
-  <div class="controls">
-    <button onclick="loadResponses()">🔄 Refresh</button>
-    <button onclick="exportCSV()">📥 Export to CSV</button>
-  </div>
+<div class="controls">
+  <button onclick="location.reload()">🔄 Refresh</button>
+  <button onclick="exportCSV()">📥 Export CSV</button>
+</div>
 
-  <div class="stats" id="stats"></div>
+<div class="stats" id="stats"></div>
 
-  <div id="loading" class="loading">Loading responses...</div>
+<div id="loading" class="loading">Loading responses...</div>
+<div id="empty" class="empty" style="display:none;">No responses yet.</div>
 
-  <table id="responses" style="display: none;">
-    <thead>
-      <tr>
-        <th>Date Submitted</th>
-        <th>Email</th>
-        <th>Preferred Dates</th>
-        <th>Food Restrictions</th>
-        <th>Location Suggestion</th>
-      </tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
-
-  <div id="empty" class="empty" style="display: none;">
-    <p>No responses yet. Share the survey link!</p>
-  </div>
+<table id="responses" style="display:none;">
+  <thead>
+    <tr>
+      <th>Date Submitted</th>
+      <th>Email</th>
+      <th>Preferred Dates</th>
+      <th>Food Restrictions</th>
+      <th>Location Suggestion</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
 
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-import { getFirestore, collection, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+import { initializeApp } from '[gstatic.com](https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js)';
+import { getFirestore, collection, query, orderBy, onSnapshot } from '[gstatic.com](https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js)';
 
+// ✅ your Firebase setup
 const firebaseConfig = {
   apiKey: "AIzaSyBXjjGK-cAkKC4CSOUyxYa23BP7TYOmTkw",
   authDomain: "grill-spel.firebaseapp.com",
   projectId: "grill-spel",
-  storageBucket: "grill-spel.firebasestorage.app",
+  storageBucket: "grill-spel.appspot.com",
   messagingSenderId: "558218357374",
   appId: "1:558218357374:web:eeaef6d629c6da47a0062f"
 };
@@ -123,121 +66,106 @@ const db = getFirestore(app);
 
 let allResponses = [];
 
-function loadResponses() {
-  const q = query(collection(db, "responses"), orderBy("timestamp", "desc"));
-  
-  onSnapshot(q, (querySnapshot) => {
-    allResponses = [];
-    querySnapshot.forEach((doc) => {
-      allResponses.push(doc.data());
-    });
-    
-    displayResponses();
-  });
-}
+const tbody = document.getElementById('tbody');
+const table = document.getElementById('responses');
+const loading = document.getElementById('loading');
+const empty = document.getElementById('empty');
+const statsBox = document.getElementById('stats');
 
 function displayResponses() {
-  const tbody = document.getElementById('tbody');
-  const empty = document.getElementById('empty');
-  const loading = document.getElementById('loading');
-  const table = document.getElementById('responses');
-  
+  loading.style.display = 'none';
+  tbody.innerHTML = '';
+
   if (allResponses.length === 0) {
     table.style.display = 'none';
-    loading.style.display = 'none';
     empty.style.display = 'block';
+    statsBox.innerHTML = '';
     return;
   }
-  
-  loading.style.display = 'none';
-  empty.style.display = 'none';
+
   table.style.display = 'table';
-  tbody.innerHTML = '';
-  
+  empty.style.display = 'none';
+
   allResponses.forEach(r => {
-    const row = tbody.insertRow();
-    const timestamp = r.timestamp ? new Date(r.timestamp.seconds * 1000).toLocaleString() : 'N/A';
-    row.innerHTML = `
-      <td>${timestamp}</td>
+    const tr = document.createElement('tr');
+    const ts = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000).toLocaleString() : 'N/A';
+    tr.innerHTML = `
+      <td>${ts}</td>
       <td>${r.email || '-'}</td>
-      <td>${r.dates && r.dates.length > 0 ? r.dates.join(', ') : 'None selected'}</td>
+      <td>${(r.dates && r.dates.join(', ')) || '-'}</td>
       <td>${r.food || '-'}</td>
-      <td>${r.location || '-'}</td>
-    `;
+      <td>${r.location || '-'}</td>`;
+    tbody.appendChild(tr);
   });
-  
+
   updateStats();
 }
 
 function updateStats() {
-  const stats = document.getElementById('stats');
-  stats.innerHTML = '';
-  
+  statsBox.innerHTML = '';
+
   const totalCard = document.createElement('div');
   totalCard.className = 'stat-card';
-  totalCard.innerHTML = `<h3>Total Responses</h3><p style="font-size: 32px; font-weight: bold;">${allResponses.length}</p>`;
-  stats.appendChild(totalCard);
-  
+  totalCard.innerHTML = `<h3>Total Responses</h3><p style="font-size:28px;font-weight:bold;">${allResponses.length}</p>`;
+  statsBox.appendChild(totalCard);
+
   const dateCount = {};
   allResponses.forEach(r => {
-    if (r.dates && Array.isArray(r.dates)) {
-      r.dates.forEach(d => {
-        dateCount[d] = (dateCount[d] || 0) + 1;
-      });
+    if (Array.isArray(r.dates)) {
+      r.dates.forEach(d => dateCount[d] = (dateCount[d] || 0) + 1);
     }
   });
-  
   if (Object.keys(dateCount).length > 0) {
-    const topDate = Object.entries(dateCount).sort((a, b) => b[1] - a[1])[0];
-    const dateCard = document.createElement('div');
-    dateCard.className = 'stat-card';
-    dateCard.innerHTML = `<h3>Most Popular Date</h3><p><strong>${topDate[0]}</strong></p><p>${topDate[1]} votes</p>`;
-    stats.appendChild(dateCard);
+    const mostDate = Object.entries(dateCount).sort((a,b)=>b[1]-a[1])[0];
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.innerHTML = `<h3>Most Popular Date</h3><p>${mostDate[0]} (${mostDate[1]})</p>`;
+    statsBox.appendChild(card);
   }
-  
-  const locationCount = {};
+
+  const locCount = {};
   allResponses.forEach(r => {
-    if (r.location && r.location.trim()) {
-      locationCount[r.location] = (locationCount[r.location] || 0) + 1;
-    }
+    if (r.location) locCount[r.location.trim()] = (locCount[r.location.trim()] || 0) + 1;
   });
-  
-  if (Object.keys(locationCount).length > 0) {
-    const topLocation = Object.entries(locationCount).sort((a, b) => b[1] - a[1])[0];
-    const locCard = document.createElement('div');
-    locCard.className = 'stat-card';
-    locCard.innerHTML = `<h3>Suggested Locations</h3><p><strong>${topLocation[0]}</strong></p><p>${topLocation[1]} mention${topLocation[1] > 1 ? 's' : ''}</p>`;
-    stats.appendChild(locCard);
+  if (Object.keys(locCount).length > 0) {
+    const topLoc = Object.entries(locCount).sort((a,b)=>b[1]-a[1])[0];
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.innerHTML = `<h3>Top Location</h3><p>${topLoc[0]} (${topLoc[1]}x)</p>`;
+    statsBox.appendChild(card);
   }
 }
 
 function exportCSV() {
-  if (allResponses.length === 0) {
-    alert('No responses to export');
-    return;
-  }
-  
+  if (!allResponses.length) { alert('No responses to export'); return; }
+
   let csv = 'Date Submitted,Email,Preferred Dates,Food Restrictions,Location Suggestion\n';
   allResponses.forEach(r => {
-    const timestamp = r.timestamp ? new Date(r.timestamp.seconds * 1000).toLocaleString() : 'N/A';
-    csv += `"${timestamp}","${r.email || ''}","${r.dates && r.dates.join('; ') || ''}","${r.food || ''}","${r.location || ''}"\n`;
+    const ts = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000).toLocaleString() : '';
+    csv += `"${ts}","${r.email || ''}","${(r.dates && r.dates.join('; ')) || ''}","${r.food || ''}","${r.location || ''}"\n`;
   });
-  
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
-  link.setAttribute("download", "grill-responses.csv");
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'grill-responses.csv';
   link.click();
-  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
-window.loadResponses = loadResponses;
-window.exportCSV = exportCSV;
+// live Firestore listener
+function loadResponses() {
+  const q = query(collection(db, 'responses'), orderBy('timestamp', 'desc'));
+  onSnapshot(q, qs => {
+    allResponses = qs.docs.map(doc => doc.data());
+    displayResponses();
+  });
+}
 
 loadResponses();
+setInterval(loadResponses, 10000);
+window.exportCSV = exportCSV;
 </script>
+
 </body>
 </html>
